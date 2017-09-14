@@ -1,148 +1,276 @@
 module.exports = HTML;
 var reduce = require('@timelaps/array/reduce');
+var reduceOwn = require('@timelaps/array/reduce/own');
 var kebabCase = require('@timelaps/string/case/kebab');
+var toArray = require('@timelaps/to/array');
 var HTMLConstantsArray = toArray('area,base,br,col,colgroup,command,embed,hr,img,input,keygen,link,meta,param,source,track,wbr');
 var assign = require('@timelaps/object/assign');
-var mergeDeep = require('@timelaps/object/merge/deep');
+var isUndefined = require('@timelaps/is/undefined');
+var merge = require('@timelaps/object/merge');
 var isString = require('@timelaps/is/string');
+var isObject = require('@timelaps/is/object');
+var isArrayLike = require('@timelaps/is/array-like');
 var isArray = require('@timelaps/is/array');
+var throws = require('@timelaps/fn/throws');
+var returns = require('@timelaps/returns');
+var stringify = require('@timelaps/io/stringify');
+var isNan = require('@timelaps/is/nan');
+var returnsSecond = require('@timelaps/returns/second');
+var HTMLStyleCustomAttribute = require('@timelaps/css/group/many');
 var HTMLConstantsObject = reduce(HTMLConstantsArray, function (memo, key) {
     memo[key] = true;
     return memo;
 }, {});
 
-function HTMLDefaultTagName(child) {
-    return child.tagName;
-}
-
-function HTMLDefaultAttributes(tagName, child) {
-    return child.attributes;
-}
-
-function HTMLDefaultChildren(tagName, attributes, child) {
-    return child.children;
-}
-
-function HTMLStringifyAttribute(attr, value) {
-    return (value || value === '') ? (' ' + attr + '="' + value + '"') : '';
-}
-
-function HTMLStringifyAttributes(attrs) {
-    return reduce(attrs, function (memo, value, key) {
-        return memo + html.attribute(kebabCase(key), value);
-    }, '');
-}
-
-function HTMLValidateChildren(children) {
-    return isArray(children);
-}
-
-function HTMLValidateNode(node) {
-    return node.tagName;
-}
-
-function HTMLStringifyChildren(children) {
-    //
-}
-
-function HTMLOpenTag(tag, attrs_) {
-    var base, prefixer, html = this,
-        attrs = (base = html.attributesBase[tag]) ? base(attrs_) : attrs_,
-        tagOpenPrefixes = html.tagOpenPrefixes;
-    return (tagOpenPrefixes[tag] || tagOpenPrefixes.defaults)(attrs) + tag + html.attributes(attrs);
-}
-
-function basicAttributeCondensation(key, value, next) {
-    var nxt = next || returns.first;
-    return function (attrs_) {
-        var attrs = attrs_ || {};
-        if (!attrs[key]) {
-            attrs[key] = value;
-        }
-        return nxt(attrs);
-    };
-}
-
-function HTMLTagEmpty(tag, attrs) {
-    return this.tagOpen(tag, attrs) + '/>';
-}
-
-function HTMLTagContent(tag, attrs, content) {
-    return this.tagOpen(tag, attrs) + '>' + content + '</' + tag + '>';
-}
-
-function HTMLTagBuild(tag_, attrs_, content) {
-    var html = this,
-        parsed = parseSelector(tag_),
-        tag = parsed.tag,
-        attrs = merge(parsed.attrs, attrs_),
-        special = html.tagSpecial[tag];
-    return special ? special(attrs, content) : (html.tagsEmpty[tag] ? html.tagEmpty(tag, attrs) : html.tagContent(tag, attrs, content));
-}
-
-function HTMLBuild(template) {
-    var html = this;
-    var access = html.access;
-    return isString(template) ? template : reduce(template, function (memo, child) {
-        // can be used recurisvely
-        return memo + html.tagBuild(child);
-    }, '');
-}
-
-function tagBuild(child) {
-    // must be string
-    var html = this;
-    var access = html.access;
-    var tagName = access.tagName(child);
-    var attrs = access.attributes(tagName, child);
-    var children = access.children(tagName, attrs, child);
-    //
-}
-
-function stylesheet(attrs, content) {
-    return attrs.href ? html.tagEmpty('link', attrs) : html.tagContent('style', attrs, content);
-}
-// addTextCssAttribute = basicAttributeCondensation('type', 'text/css'),
-//     basicStyleAttributes = basicAttributeCondensation('rel', 'stylesheet', addTextCssAttribute),
-//     attributesBase = {
-//         link: basicStyleAttributes,
-//         style: basicStyleAttributes,
-//         script: basicAttributeCondensation('type', 'text/javascript'),
-//         button: basicAttributeCondensation('type', 'submit'),
-//         input: basicAttributeCondensation('type', 'input'),
-//         form: basicAttributeCondensation('method', 'get')
-//     },
-//     tagOpenPrefixes = {
-//         defaults: returns('<'),
-//         html: returns('<!DOCTYPE html><')
-//     },
 function HTML(options) {
-    var access = {
+    var addTextCssAttribute = basicAttributeCondensation('type', 'text/css'),
+        basicStyleAttributes = basicAttributeCondensation('rel', 'stylesheet', addTextCssAttribute),
+        attributesBase = {
+            link: basicStyleAttributes,
+            style: basicStyleAttributes,
+            script: basicAttributeCondensation('type', 'text/javascript'),
+            button: basicAttributeCondensation('type', 'submit'),
+            input: basicAttributeCondensation('type', 'input'),
+            form: basicAttributeCondensation('method', 'get')
+        };
+    return assign(html, merge({
+        empty: assign({}, HTMLConstantsObject),
+        base: {
+            attributes: attributesBase
+        },
+        access: {
             tagName: HTMLDefaultTagName,
             attributes: HTMLDefaultAttributes,
             children: HTMLDefaultChildren
         },
-        stringify = {
+        stringify: {
             attributes: HTMLStringifyAttributes,
-            attribute: HTMLStringifyAttribute
+            attribute: HTMLStringifyAttribute,
+            attributeName: kebabCase,
+            attributeValue: HTMLStringifyAttributeValue,
+            node: HTMLStringifyNode,
+            children: HTMLStringifyChildren,
+            nodeList: HTMLStringifyAttributeMaker(reduce, returnsSecond),
+            attributeHash: HTMLStringifyAttributeMaker(reduceOwn, function (key, value) {
+                return {
+                    name: key,
+                    value: value
+                };
+            }),
+            attributeCustom: {
+                style: HTMLStyleCustomAttribute
+            }
         },
-        validate = {
+        validate: {
             node: HTMLValidateNode,
-            children: HTMLValidateChildren
-        };
-    return assign(starter, mergeDeep({
-        access: access,
-        stringify: stringify,
-        validate: validate
-    }, options));
-
-    function starter(structure) {
-        var validate = starter.validate;
-        var stringify = starter.stringify;
-        if (validate.node(structure)) {
-            return stringify.node(structure);
-        } else if (validate.children(structure)) {
-            return stringify.children(structure);
+            children: HTMLValidateChildren,
+            parent: HTMLValidateParent
+        },
+        open: {
+            defaults: returns('<'),
+            html: returns('<!DOCTYPE html><')
+        },
+        tag: {
+            empty: HTMLTagEmpty,
+            content: HTMLTagContent
         }
+    }, options, true));
+
+    function html(structure) {
+        var stringify = html.stringify;
+        if (html.validate.children(structure)) {
+            return stringify.children(structure);
+        } else {
+            return stringify.node(structure);
+        }
+    }
+
+    function HTMLStringifyNode(child) {
+        var validate = html.validate;
+        if (!validate.node(child)) {
+            // reject... usually child is a string
+            // so it doesn't need to be stringified
+            return child;
+        }
+        var access = html.access;
+        // must be string
+        var tagName = access.tagName(child);
+        var attrs = access.attributes(tagName, child);
+        var isParent = validate.parent(tagName, attrs, child);
+        var tag = html.tag;
+        if (!isParent) {
+            return tag.empty(tagName, attrs);
+        }
+        var children = access.children(tagName, attrs, child);
+        return tag.content(tagName, attrs, children);
+    }
+
+    function HTMLStringifyChildren(children) {
+        var node = html.stringify.node;
+        return reduce(children, function (memo, child) {
+            return memo + node(child);
+        }, '');
+    }
+
+    function HTMLTagEmpty(tagName, attributes) {
+        return HTMLOpenTag(tagName, attributes) + '/>';
+    }
+
+    function HTMLTagContent(tagName, attributes, children) {
+        return HTMLOpenTag(tagName, attributes) + '>' + HTMLStringifyChildren(children) + '</' + tagName + '>';
+    }
+
+    function HTMLValidateParent(tagName) {
+        return !html.empty[tagName];
+    }
+
+    function HTMLDefaultTagName(child) {
+        return child.tagName;
+    }
+
+    function HTMLDefaultAttributes(tagName, child) {
+        return child.attributes;
+    }
+
+    function HTMLDefaultChildren(tagName, attributes, child) {
+        return child.children || child.childNodes;
+    }
+
+    function HTMLStringifyAttribute(attrs, attr_, value_, known) {
+        var attr = attr_;
+        var value = value_;
+        var stringify = html.stringify;
+        if (attr && (value || value === '')) {
+            attr = stringify.attributeName(attr);
+            if (isUndefined(index = known[attr])) {
+                // new attr
+                index = known[attr] = attrs.length;
+                attrs.push('');
+            }
+            // otherwise it's an update
+            value = stringify.attributeValue(attr, value);
+            attrs[index] = ' ' + attr + '="' + value + '"';
+        }
+        return attrs;
+    }
+
+    function HTMLStringifyAttributeObject(key, object, delimiter) {
+        var reducer;
+        if (isArray(object)) {
+            return object.join(delimiter);
+        } else {
+            reducer = html.stringify.attributeCustom[key];
+            reducer = reducer ? reducer(object, options) : object;
+            return isArray(reducer) ? reducer.join(' ') : reduceOwn(reducer, defaultReducer, '');
+        }
+
+        function defaultReducer(memo, value, key) {
+            if (value) {
+                if (memo) {
+                    return memo + delimiter + key;
+                } else {
+                    return key;
+                }
+            } else {
+                return memo;
+            }
+        }
+    }
+    // function HTMLStyleCustomAttribute(memo, value_, style) {
+    //     var value = value_,
+    //         delimiter = memo ? ' ' : '';
+    //     return memo + delimiter + style + ': ' + value + ';';
+    // }
+    function HTMLStringifyAttributeString(value) {
+        return isNan(value) ? '' : (isString(value) ? value : stringify(value));
+    }
+
+    function HTMLStringifyAttributeValue(attr, value, delimiter_) {
+        if (isObject(value)) {
+            return HTMLStringifyAttributeObject(attr, value, delimiter_ || ' ');
+        } else {
+            return HTMLStringifyAttributeString(value);
+        }
+    }
+
+    function HTMLStringifyAttributes(attrs, known) {
+        var attrsAreArray = isArrayLike(attrs);
+        var stringify = html.stringify;
+        var method = attrsAreArray ? stringify.nodeList : stringify.attributeHash;
+        return method(attrs, known);
+    }
+
+    function HTMLStringifyAttributeMaker(reducer, expander) {
+        return function (attrs, known) {
+            var stringifyAttribute = html.stringify.attribute;
+            return reducer(attrs, function (memo, value, key) {
+                var attr = expander(key, value);
+                return stringifyAttribute(memo, attr.name, attr.value, known);
+            }, []).join('');
+        };
+    }
+    // function HTMLStringifyNodeList(attrs, known) {
+    //     var stringifyAttribute = html.stringify.attribute;
+    //     return reduce(attrs, function (memo, attr) {
+    //         return stringifyAttribute(memo, attr.name, attr.value, known);
+    //     }, []).join('');
+    // }
+    // function HTMLStringifyAttributeHash(attrs, known) {
+    //     var stringifyAttribute = html.stringify.attribute;
+    //     return reduceOwn(attrs, function (memo, value, key) {
+    //         return stringifyAttribute(memo, key, value, known);
+    //     }, []).join('');
+    // }
+    function HTMLValidateChildren(children) {
+        return isArrayLike(children);
+    }
+
+    function HTMLValidateNode(node) {
+        return node.tagName;
+    }
+
+    function HTMLOpenTag(tag, attrs_) {
+        var base = html.base,
+            attributesBase = base.attributes,
+            tagAttributesBase = attributesBase[tag],
+            stringify = html.stringify,
+            attrs = tagAttributesBase ? tagAttributesBase(attrs_) : attrs_,
+            open = html.open,
+            opener = open[tag] || open.defaults;
+        return opener(attrs) + tag + stringify.attributes(attrs, {});
+    }
+
+    function basicAttributeCondensation(key, value, next) {
+        var nxt = next || returns.first;
+        return function (attrs_) {
+            var attrs = attrs_ || {};
+            if (!attrs[key]) {
+                attrs[key] = value;
+            }
+            return nxt(attrs);
+        };
+    }
+
+    function HTMLTagBuild(tag_, attrs_, content) {
+        var html = html,
+            parsed = parseSelector(tag_),
+            tag = parsed.tag,
+            attrs = merge(parsed.attrs, attrs_, true),
+            special = html.special,
+            specialFn = specialTag[tag];
+        return specialFn ? specialFn(attrs, content) : (html.tagsEmpty[tag] ? html.tagEmpty(tag, attrs) : html.tagContent(tag, attrs, content));
+    }
+
+    function HTMLBuild(template) {
+        var html = html;
+        var access = html.access;
+        return isString(template) ? template : reduce(template, function (memo, child) {
+            // can be used recurisvely
+            return memo + html.tagBuild(child);
+        }, '');
+    }
+
+    function stylesheet(attrs, content) {
+        return attrs.href ? html.tagEmpty('link', attrs) : html.tagContent('style', attrs, content);
     }
 }
