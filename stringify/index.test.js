@@ -2,7 +2,11 @@ var b = require('@timelaps/batterie');
 var stringify = require('.');
 b.describe('stringify', function () {
     b.expect(stringify).toBeFunction();
-    var html = stringify();
+    var html = stringify({
+        prefixes: {
+            opacity: ['-blah-', '']
+        }
+    });
     b.it('stringifies dom-like structures', function (t) {
         // debugger;
         t.expect(html({
@@ -51,8 +55,8 @@ b.describe('stringify', function () {
                 attributes: {
                     class: {
                         one: true,
-                        two: false,
-                        three: true
+                            two: false,
+                            three: true
                     }
                 }
             })).toBe('<div class="one three"></div>');
@@ -69,7 +73,7 @@ b.describe('stringify', function () {
                         opacity: 0.5
                     }
                 }
-            })).toBe('<div style="display: block; position: relative; top: 0px; left: 0px; opacity: 0.5;"></div>');
+            })).toBe('<div style="display: block; position: relative; top: 0px; left: 0px; -blah-opacity: 0.5; opacity: 0.5;"></div>');
         });
     });
 });
