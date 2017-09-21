@@ -16,6 +16,8 @@ var insert = require('./insert');
 var is = require('./is');
 var root = require('./root');
 var sibling = require('./sibling');
+var stringify = require('./stringify');
+var tagName = require('./tag/name');
 
 function baseline() {
     var baseChild = assign({}, child);
@@ -23,8 +25,6 @@ function baseline() {
     var baseInsert = assign({}, insert);
     var baseIs = assign({}, is);
     var baseSibling = assign({}, sibling);
-    var stringify = require('./stringify');
-    var tagName = require('./tag/name');
     return {
         attribute: attribute,
         child: baseChild,
@@ -43,13 +43,28 @@ function baseline() {
 }
 
 function scope(window) {
+    if (!isWindow(window)) {
+        throws({
+            type: 'InvalidArgument',
+            message: 'A global must be passed to be scoped against'
+        });
+    }
+    var createScoped = create(window);
+    var prefixes = getComputed(createScoped.element('div'), window);
     return assign(baseline(), {
-        create: create(window),
+        $: $(window),
+        create: createScoped,
+        prefixes: prefixes,
         matches: matches(window),
         fromString: fromString(window),
         dispatch: dispatch(window),
-        $: $(window),
         parentMany: parentMany(window),
-        parent: parent(window)
+        parent: parent(window),
+        computed: computed(window),
+        stringify: function (options) {
+            return stringify(assign({
+                prefixes: prefixes
+            }, options));
+        }
     });
 }

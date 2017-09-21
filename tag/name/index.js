@@ -3,5 +3,5 @@ var isObject = require('@timelaps/is/object');
 
 function tagName(tag) {
     var tagName;
-    return tag && isObject(tag) ? ((tagName = tag.tagName) && tagName.toLowerCase()) || "" : "";
+    return isElement(tag) ? ((tagName = tag.tagName) && tagName.toLowerCase()) || "" : "";
 }
