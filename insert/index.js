@@ -8,6 +8,7 @@ var create = require('../create');
 var childAt = require('../child/at');
 insertion.before = require('./before');
 insertion.after = require('./after');
+insertion.html = require('./html');
 
 function insertion(noIndex, getSibling, fn) {
     return function (parent_, el, index_) {

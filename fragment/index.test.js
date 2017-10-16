@@ -6,7 +6,6 @@ var create = require('../create');
 var creator = create(window);
 b.describe('fragment', function () {
     b.expect(fragment).toBeFunction();
-    b.expect(fragment).toThrow();
     b.it('creates a document fragment', function (t) {
         var frag = fragment(window);
         t.expect(isFragment(frag)).toBeTrue()
