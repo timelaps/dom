@@ -4,6 +4,7 @@ module.exports = accessor;
 accessor.next = require('./next');
 accessor.previous = require('./previous');
 var indexOf = require('@timelaps/n/index/of');
+var childAt = require('../child/at');
 
 function accessor(key, indexer) {
     return isNull(test[key]) ? function (target) {
