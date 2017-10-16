@@ -8,7 +8,6 @@ b.describe('stringify', function () {
         }
     });
     b.it('stringifies dom-like structures', function (t) {
-        // debugger;
         t.expect(html({
             tagName: 'div'
         })).toBe('<div></div>');
@@ -27,9 +26,10 @@ b.describe('stringify', function () {
             t.expect(html({
                 tagName: 'div',
                 attributes: {
-                    id: 'identifier1'
+                    id: 'identifier1',
+                    'data-truthy': true
                 }
-            })).toBe('<div id="identifier1"></div>');
+            })).toBe('<div id="identifier1" data-truthy=""></div>');
         });
         b.it('will handle kebab casing', function (t) {
             t.expect(html({
@@ -53,10 +53,10 @@ b.describe('stringify', function () {
             t.expect(html({
                 tagName: 'div',
                 attributes: {
-                    class: {
+                    'class': {
                         one: true,
-                            two: false,
-                            three: true
+                        two: false,
+                        three: true
                     }
                 }
             })).toBe('<div class="one three"></div>');
@@ -74,6 +74,13 @@ b.describe('stringify', function () {
                     }
                 }
             })).toBe('<div style="display: block; position: relative; top: 0px; left: 0px; -blah-opacity: 0.5; opacity: 0.5;"></div>');
+        });
+        b.it('will handle lists of elements', function (t) {
+            t.expect(html([{
+                tagName: 'div'
+            }, {
+                tagName: 'div'
+            }])).toBe('<div></div><div></div>');
         });
     });
 });

@@ -1,5 +1,5 @@
 module.exports = parent;
-var reduce = require('@timelaps/array/reduce');
+var reduce = require('@timelaps/n/reduce');
 var toArray = require('@timelaps/to/array');
 var contains = require('@timelaps/n/contains');
 var whilst = require('@timelaps/fn/whilst');

@@ -1,6 +1,5 @@
 module.exports = {
     append: require('./append'),
-    remove: require('./remove'),
     all: require('./all'),
     last: require('./last'),
     html: require('./html'),

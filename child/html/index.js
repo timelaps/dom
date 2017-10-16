@@ -1,9 +1,12 @@
 module.exports = html;
+var get = require('@timelaps/n/get');
 
-function html(el, string) {
-    var changing = el.innerHTML !== string;
-    if (changing) {
-        el.innerHTML = string;
+function html(div, string) {
+    var document = div.ownerDocument;
+    var innerShim = get(document, ['registerElement', 'innerHTML']);
+    if (innerShim) {
+        innerShim(div, string);
+    } else {
+        div.innerHTML = string;
     }
-    return changing;
 }

@@ -1,3 +1,3 @@
-module.exports = require('../accessor')('previousSibling', function (index) {
+module.exports = require('../')('previousSibling', function (index) {
     return index - 1;
 });

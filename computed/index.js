@@ -5,6 +5,7 @@ var isWindow = require('@timelaps/is/window');
 
 function computed(window) {
     return function (el, ctx) {
+        // get computed must be called on the window that contains the element
         var ret = getClosestWindow(ctx).getComputedStyle(el);
         return ret ? ret : getClosestWindow(el).getComputedStyle(el) || mapValues(el[STYLE], returnsFirst) || {};
     };

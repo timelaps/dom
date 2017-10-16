@@ -1,7 +1,8 @@
 module.exports = dispatchEvent;
 
 function dispatchEvent(window) {
-    return function dispatchEvent(el, name, options) {
-        el.dispatchEvent(new window.CustomEvent(name, options));
+    var Custom = window.CustomEvent;
+    return function scopedDispatchEvent(el, name, options) {
+        el.dispatchEvent(new Custom(name, options));
     };
 }

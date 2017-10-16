@@ -1,9 +1,9 @@
 module.exports = matches;
 var append = require('../child/append');
 var $_ = require('../$');
-var createElement = require('../create/element');
+var createElement = require('../create');
 var indexOf = require('@timelaps/n/index/of');
-var remove = require('../child/remove');
+var remove = require('../remove');
 
 function matches(window) {
     var document = window.document;
@@ -25,7 +25,7 @@ function matches(window) {
             parent = create('div');
             append(parent, element);
         }
-        var result = indexOf($(selector, parent), element) !== -1;
+        var result = includes($(selector, parent), element);
         if (!original) {
             remove(element);
         }

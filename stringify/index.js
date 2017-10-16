@@ -1,6 +1,6 @@
 module.exports = HTML;
 var reduce = require('@timelaps/array/reduce');
-var reduceOwn = require('@timelaps/array/reduce/own');
+var objectReduce = require('@timelaps/object/reduce');
 var kebabCase = require('@timelaps/string/case/kebab');
 var toArray = require('@timelaps/to/array');
 var HTMLConstantsArray = require('../tag/empty');
@@ -16,6 +16,9 @@ var returns = require('@timelaps/returns');
 var stringify = require('@timelaps/io/stringify');
 var isNan = require('@timelaps/is/nan');
 var returnsSecond = require('@timelaps/returns/second');
+var isFalse = require('@timelaps/is/false');
+var isTrue = require('@timelaps/is/true');
+var isNil = require('@timelaps/is/nil');
 var HTMLStyleCustomAttribute = require('@timelaps/css/group/many');
 var HTMLConstantsObject = reduce(HTMLConstantsArray, function (memo, key) {
     memo[key] = true;
@@ -48,10 +51,11 @@ function HTML(options) {
             attribute: HTMLStringifyAttribute,
             attributeName: kebabCase,
             attributeValue: HTMLStringifyAttributeValue,
+            attributeRemove: HTMLStringifyAttributeRemove,
             node: HTMLStringifyNode,
             children: HTMLStringifyChildren,
             nodeList: HTMLStringifyAttributeMaker(reduce, returnsSecond),
-            attributeHash: HTMLStringifyAttributeMaker(reduceOwn, function (key, value) {
+            attributeHash: HTMLStringifyAttributeMaker(objectReduce, function (key, value) {
                 return {
                     name: key,
                     value: value
@@ -148,10 +152,27 @@ function HTML(options) {
                 attrs.push('');
             }
             // otherwise it's an update
-            value = stringify.attributeValue(attr, value);
-            attrs[index] = ' ' + attr + '="' + value + '"';
+            if (stringify.attributeRemove(attr, value)) {
+                delete known[attr];
+                attrs.splice(index, 1);
+            } else {
+                value = stringify.attributeValue(attr, value);
+                attrs[index] = ' ' + attr + '="' + value + '"';
+            }
         }
         return attrs;
+    }
+
+    function HTMLStringifyAttributeValue(attr, value) {
+        if (isObject(value)) {
+            return HTMLStringifyAttributeObject(attr, value, ' ');
+        } else {
+            return HTMLStringifyAttributeString(value);
+        }
+    }
+
+    function HTMLStringifyAttributeRemove(attr, value) {
+        return isNil(value) || isNan(value) || isFalse(value);
     }
 
     function HTMLStringifyAttributeObject(key, object, delimiter) {
@@ -161,7 +182,7 @@ function HTML(options) {
         } else {
             reducer = html.stringify.attributeCustom[key];
             reducer = reducer ? reducer(object, options) : object;
-            return isArray(reducer) ? reducer.join(' ') : reduceOwn(reducer, defaultReducer, '');
+            return isArray(reducer) ? reducer.join(' ') : objectReduce(reducer, defaultReducer, '');
         }
 
         function defaultReducer(memo, value, key) {
@@ -176,21 +197,9 @@ function HTML(options) {
             }
         }
     }
-    // function HTMLStyleCustomAttribute(memo, value_, style) {
-    //     var value = value_,
-    //         delimiter = memo ? ' ' : '';
-    //     return memo + delimiter + style + ': ' + value + ';';
-    // }
-    function HTMLStringifyAttributeString(value) {
-        return isNan(value) ? '' : (isString(value) ? value : stringify(value));
-    }
 
-    function HTMLStringifyAttributeValue(attr, value, delimiter_) {
-        if (isObject(value)) {
-            return HTMLStringifyAttributeObject(attr, value, delimiter_ || ' ');
-        } else {
-            return HTMLStringifyAttributeString(value);
-        }
+    function HTMLStringifyAttributeString(value) {
+        return isTrue(value) ? '' : (isString(value) ? value : stringify(value));
     }
 
     function HTMLStringifyAttributes(attrs, known) {
@@ -209,18 +218,7 @@ function HTML(options) {
             }, []).join('');
         };
     }
-    // function HTMLStringifyNodeList(attrs, known) {
-    //     var stringifyAttribute = html.stringify.attribute;
-    //     return reduce(attrs, function (memo, attr) {
-    //         return stringifyAttribute(memo, attr.name, attr.value, known);
-    //     }, []).join('');
-    // }
-    // function HTMLStringifyAttributeHash(attrs, known) {
-    //     var stringifyAttribute = html.stringify.attribute;
-    //     return reduceOwn(attrs, function (memo, value, key) {
-    //         return stringifyAttribute(memo, key, value, known);
-    //     }, []).join('');
-    // }
+
     function HTMLValidateChildren(children) {
         return isArrayLike(children);
     }

@@ -1,21 +1,21 @@
-module.exports = insertBefore;
-var isNil = require('@timelaps/is/nil');
-var isNumber = require('@timelaps/is/number');
-var append = require('../append');
-var prepend = require('../child/prepend');
+var wrap = require('../');
+var first = require('../../child/first');
+var previousSibling = require('../../sibling/previous');
+var prepend = require('../../child/prepend');
+var append = require('../../child/append');
+module.exports = wrap(first, previousSibling, insertBefore);
 
-function insertBefore(el, parent, index) {
-    var child;
-    if (isNil(index)) {
-        return prepend(parent, el);
-    } else if (isNumber(index)) {
-        child = parent.children[index];
+function insertBefore(parent, el, sibling, current) {
+    if (sibling) {
+        if (current !== el) {
+            if (sibling.parentNode !== parent) {
+                return prepend(parent, el);
+            }
+            parent.insertBefore(el, sibling);
+            return true;
+        }
+        return false;
     } else {
-        child = index;
-    }
-    if (child) {
-        parent.insertBefore(el, child);
-    } else {
-        append(parent, el);
+        return append(parent, el);
     }
 }

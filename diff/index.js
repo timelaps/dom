@@ -1,27 +1,19 @@
 module.exports = diff;
-// cannot start with a text node
+var isUndefined = require('@timelaps/is/undefined');
+var forOwn = require('@timelaps/n/for/own');
+var isString = require('@timelaps/is/string');
+var isArray = require('@timelaps/is/array');
+var returnsTrue = require('@timelaps/returns/true');
+var toArray = require('@timelaps/to/array');
+var forEach = require('@timelaps/n/for/each');
+var returns = require('@timelaps/returns/first');
+var assign = require('@timelaps/object/assign');
+var baselineOptions = {
+    stopAt: returnsTrue
+};
+
 function createDiffer(context) {
     var hash, updating, swaps;
-
-    function resolveLater(key) {
-        return isString(key) ? function () {
-            return hash[key];
-        } : returns(key);
-    }
-
-    function swapNodes(h) {
-        var $remove, add = h.add(),
-            remove = h.remove();
-        if (add && remove) {
-            $remove = context.returnsManager(remove);
-            $remove.insertBefore(add);
-            $remove.remove();
-        } else if (remove) {
-            context.$(remove).remove();
-        } else {
-            context.returnsManager(h.parent).insertAfter(add, h.index);
-        }
-    }
     return {
         context: context,
         swaps: (swaps = []),
@@ -29,10 +21,10 @@ function createDiffer(context) {
         updating: (updating = []),
         queue: {
             add: function (node, index, parent) {
-                return this.swap(NULL, node, index, parent);
+                return this.swap(null, node, index, parent);
             },
             remove: function (node, parent) {
-                return this.swap(node, NULL, NULL, parent);
+                return this.swap(node, null, null, parent);
             },
             html: function (node, content) {},
             swap: function (first, last, index, parent) {
@@ -63,15 +55,35 @@ function createDiffer(context) {
             },
         }
     };
+
+    function resolveLater(key) {
+        return isString(key) ? function () {
+            return hash[key];
+        } : returns(key);
+    }
+
+    function swapNodes(h) {
+        var $remove, add = h.add(),
+            remove = h.remove();
+        if (add && remove) {
+            $remove = context.returnsManager(remove);
+            $remove.insertBefore(add);
+            $remove.remove();
+        } else if (remove) {
+            context.$(remove).remove();
+        } else {
+            context.returnsManager(h.parent).insertAfter(add, h.index);
+        }
+    }
 }
 
-function diff(_a, _b, _hash, _stopper, context) {
+function diff(_a, _b, _options) {
     var returns, mutate, removing, updating, inserting, resultant, current, identifyingKey, identified,
         a = _a,
-        b = cloneJSON(_b),
+        b = _b,
         layer_level = 0,
+        options = assign(options, baselineOptions),
         // check kids
-        stopper = _stopper || returnsTrue,
         diffs = createDiffer(context),
         keysHash = diffs.keys;
     updateElement(a, b);
@@ -90,7 +102,7 @@ function diff(_a, _b, _hash, _stopper, context) {
         });
         if (checkNeedForCustom(a)) {
             manager = context.returnsManager(a);
-            if (keys(attrs)[LENGTH]) {
+            if (keys(attrs).length) {
                 manager.attr(attrs);
             }
             if (props) {
@@ -120,9 +132,9 @@ function diff(_a, _b, _hash, _stopper, context) {
 
     function diffNodeProperties(a, bAttrs, props, style_) {
         var style, aStyle, styl, stylKeys, styleIterator, aAttributes = a.attributes,
-            aLength = aAttributes[LENGTH],
+            aLength = aAttributes.length,
             bKeys = keys(bAttrs),
-            bLength = bKeys[LENGTH],
+            bLength = bKeys.length,
             attrs = reduce(arrayLikeMax(aLength, bLength), //
                 function (memo, voided, index) {
                     var key;
@@ -155,7 +167,7 @@ function diff(_a, _b, _hash, _stopper, context) {
             aStyle = a[STYLE];
             styl = style_ || {};
             stylKeys = keys(styl);
-            styleIterator = arrayLikeMax(a.style[LENGTH], stylKeys[LENGTH]);
+            styleIterator = arrayLikeMax(a.style.length, stylKeys.length);
             style = reduce(styleIterator, function (style, key) {
                 var valueA = aStyle[key];
                 var valueB = styl[key];
@@ -175,11 +187,11 @@ function diff(_a, _b, _hash, _stopper, context) {
             var accessAValue = accessA[key];
             var accessBValue = accessB[key];
             if (accessAValue !== accessBValue) {
-                if (accessAValue === UNDEFINED && accessBValue === BOOLEAN_FALSE) {
+                if (isUndefined(accessAValue) && accessBValue === BOOLEAN_FALSE) {
                     return;
                 }
                 updates = updates || {};
-                updates[key] = accessBValue === UNDEFINED ? NULL : accessBValue;
+                updates[key] = isUndefined(accessBValue) ? null : accessBValue;
             }
         });
         if (updates) {
@@ -249,7 +261,7 @@ function diff(_a, _b, _hash, _stopper, context) {
         }
         var attrs = accessMeta(virtual);
         var children = accessChildren(virtual);
-        return (isString(attrs) || isArray(attrs)) ? [first, NULL, rewrapChildren(attrs)] : [first, attrs, rewrapChildren(children)];
+        return (isString(attrs) || isArray(attrs)) ? [first, null, rewrapChildren(attrs)] : [first, attrs, rewrapChildren(children)];
     }
 
     function accessProps(virtual) {
@@ -322,11 +334,11 @@ function diff(_a, _b, _hash, _stopper, context) {
         // it was a string, so there's nothing more
         // to compute in regards to children
         // strings just wipe out the previous els
-        if ((!bChildren && bChildren !== EMPTY_STRING) || !stopper(b) || computeStringDifference(a, bChildren)) {
+        if ((!bChildren && bChildren !== EMPTY_STRING) || !options.stopAt(b) || computeStringDifference(a, bChildren)) {
             return;
         }
-        var bChildrenLength = bChildren[LENGTH];
-        var aChildrenLength = aChildren[LENGTH];
+        var bChildrenLength = bChildren.length;
+        var aChildrenLength = aChildren.length;
         var maxLength = Math.max(aChildrenLength, bChildrenLength);
         var fragment, aChild, virtual, infos, originalChild, j, finished, bChild, removing, result, dontCreate, offset = 0,
             i = 0,
@@ -405,7 +417,6 @@ function diff(_a, _b, _hash, _stopper, context) {
             parent.innerHTML = virtual[2];
             return;
         }
-        // var parsed = parseSelector(virtual[0]);
         created = context.createElement(virtual[0], buildAttrs(virtual)).element();
         setKey(created, virtual);
         return updateFromVirtual(created, virtual[2], parent);

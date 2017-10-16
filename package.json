@@ -4,22 +4,40 @@
   "description": "apis for modifying and working with the dom Edit",
   "main": "index.js",
   "dependencies": {
-    "@timelaps/array": "^1.0.15",
-    "@timelaps/css": "^1.0.3",
+    "@timelaps/array": "^1.0.23",
+    "@timelaps/css": "^1.0.8",
+    "@timelaps/fn": "^1.0.19",
     "@timelaps/io": "^1.0.6",
-    "@timelaps/is": "^1.0.14",
-    "@timelaps/n": "^1.0.29",
-    "@timelaps/object": "^1.0.20",
-    "@timelaps/returns": "^1.0.0",
-    "@timelaps/string": "^1.0.4",
-    "@timelaps/to": "^1.0.9"
+    "@timelaps/is": "^1.0.15",
+    "@timelaps/n": "^1.0.40",
+    "@timelaps/object": "^1.0.23",
+    "@timelaps/returns": "^1.0.2",
+    "@timelaps/string": "^1.0.8",
+    "@timelaps/to": "^1.0.11"
   },
   "devDependencies": {
-    "@timelaps/batterie": "^1.0.73"
+    "@timelaps/batterie": "^1.0.75",
+    "browserify": "^14.4.0",
+    "npm-watch": "^0.3.0"
   },
   "scripts": {
     "test": "node test.js",
-    "share": "npm version patch && git push && npm publish"
+    "share": "npm version patch && git push && npm publish",
+    "build": "npm run build-spec && npm run build-global",
+    "build-global": "browserify global.js -o dist/global.js",
+    "build-spec": "browserify test.js -o dist/spec.js",
+    "dev": "npm run build && open ./dist/index.html && npm-watch"
+  },
+  "watch": {
+    "build": {
+      "patterns": [
+        "**/*.js"
+      ],
+      "ignore": [
+        "dist/spec.js",
+        "dist/global.js"
+      ]
+    }
   },
   "repository": {
     "type": "git",

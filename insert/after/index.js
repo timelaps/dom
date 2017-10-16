@@ -1,18 +1,15 @@
-module.exports = insertAfter;
-var nextSibling = require('../sibling/next');
-var isNil = require('@timelaps/is/nil');
+var nextSibling = require('../../sibling/next');
 var append = require('../../child/append');
-var insertBefore = require('../../insert/before');
+var wrap = require('../');
+var last = require('../../child/last');
+module.exports = wrap(last, nextSibling, insertAfter);
 
-function insertAfter(el, target) {
-    var parent = target.parentNode;
-    if (!parent) {
-        return;
+function insertAfter(parent, el, sibling, current) {
+    if (!current || !sibling) {
+        return append(parent, el);
+    } else if (current !== el) {
+        parent.insertBefore(el, current);
+        return true;
     }
-    var nextSib = nextSibling(target);
-    if (isNil(nextSib)) {
-        append(parent, el);
-    } else {
-        insertBefore(el, parent, nextSib);
-    }
+    return false;
 }

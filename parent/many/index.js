@@ -1,6 +1,6 @@
 module.exports = parentMany;
 var parent = require('../');
-var reduce = require('@timelaps/array/reduce');
+var reduce = require('@timelaps/n/reduce');
 var toArray = require('@timelaps/to/array');
 var contains = require('@timelaps/n/contains');
 

@@ -1,10 +1,13 @@
 module.exports = $;
 var toArray = require('@timelaps/to/array');
+var next = require('@timelaps/css/next/$');
+var context = require('./context');
 
 function $(window) {
-    var document = window.document;
-    return function (string, context) {
-        var ctx = context || document;
-        return toArray(ctx.querySelectorAll(string));
-    };
+    return next(window.document, context, $);
+
+    function $(string, context) {
+        // in the future, you can use css selector
+        return toArray(context.querySelectorAll(string));
+    }
 }
