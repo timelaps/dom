@@ -26,7 +26,8 @@
     "build": "npm run build-spec && npm run build-global",
     "build-global": "browserify global.js -o dist/global.js",
     "build-spec": "browserify test.js -o dist/spec.js",
-    "dev": "npm run build && open ./dist/index.html && npm-watch"
+    "dev": "npm run build && open ./dist/index.html && npm-watch",
+    "test-travis": "npm run build"
   },
   "watch": {
     "build": {

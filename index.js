@@ -1,7 +1,7 @@
 var cloneJSON = require('@timelaps/json/clone');
 var test = require('./test-div');
 var isWindow = require('@timelaps/is/window');
-var assign = require('@timelaps/object/assign');
+var extend = require('@timelaps/object/extend');
 var $ = require('./$');
 var generator = require('@timelaps/fn/generator/array');
 var keys = require('@timelaps/n/keys');
@@ -16,7 +16,7 @@ var parent = require('./parent');
 var attribute = require('./attribute');
 var child = require('./child');
 var connected = require('./connected');
-var events = require('./events');
+var event = require('./event');
 var insert = require('./insert');
 var children = require('./child/all');
 var is = require('./is');
@@ -29,11 +29,11 @@ var rootMany = null;
 module.exports = baseline();
 
 function baseline() {
-    var baseChild = assign({}, child);
-    var baseEvents = cloneJSON(events);
-    var baseInsert = assign({}, insert);
-    var baseIs = assign({}, is);
-    var baseSibling = assign({}, sibling);
+    var baseChild = extend([{}, child]);
+    var baseEvent = cloneJSON(event);
+    var baseInsert = extend([{}, insert]);
+    var baseIs = extend([{}, is]);
+    var baseSibling = extend([{}, sibling]);
     return {
         html: baseChild.html,
         append: baseChild.append,
@@ -42,7 +42,7 @@ function baseline() {
         child: baseChild,
         children: children,
         connected: connected,
-        events: baseEvents,
+        event: baseEvent,
         scope: scope,
         insert: baseInsert,
         insertAfter: baseInsert.after,
@@ -72,7 +72,7 @@ function scope(window) {
     var cssDeclaration = computed(test, window);
     var prefixes = prefixed(generator(keys(cssDeclaration)));
     var base = baseline();
-    return assign($(window), base, {
+    return extend([$(window), base, {
         create: createScoped,
         fragment: function (frag) {
             return fragment(window, frag);
@@ -87,9 +87,9 @@ function scope(window) {
             return fromString(window, string);
         },
         stringify: function (options) {
-            return stringify(assign({
+            return stringify(extend([{
                 prefixes: prefixes
-            }, options));
+            }, options]));
         }
-    });
+    }]);
 }

@@ -1,5 +1,7 @@
 language: node_js
 node_js: "stable"
+script: npm run test-travis
+before_script: npm run build
 
 addons:
   firefox: latest
@@ -8,3 +10,7 @@ addons:
      - google-chrome
     packages:
      - google-chrome-stable fluxbox
+
+  sauce_connect:
+    username: "Your Sauce Labs username"
+    access_key: "Your Sauce Labs access key"
