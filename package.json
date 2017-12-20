@@ -1,6 +1,6 @@
 {
   "name": "@timelaps/dom",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "apis for modifying and working with the dom Edit",
   "main": "index.js",
   "dependencies": {
